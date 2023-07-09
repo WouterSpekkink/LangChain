@@ -43,5 +43,5 @@ embeddings = OpenAIEmbeddings(
 
 print("===Embedding text and creating database===")
 db = FAISS.from_documents(split_documents, embeddings)
-db.save_local("./vectorstore/", "faiss_index")
+db.save_local("./vectorstore/", "index")
 
