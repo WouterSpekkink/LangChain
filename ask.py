@@ -27,6 +27,7 @@ if len(sys.argv) > 1:
 chain = ConversationalRetrievalChain.from_llm(
   llm=ChatOpenAI(model="gpt-3.5-turbo"),
   retriever=db.as_retriever(),
+  return_source_documents = True,
 )
 
 # Set up conversation
@@ -37,7 +38,20 @@ while True:
   if query in ['quit', 'q', 'exit']:
     sys.exit()
   result = chain({"question": query, "chat_history": chat_history})
+  print("\nAnswer:\n")
   print(result['answer'])
+  print("\nSources:\n")
+  sources = result['source_documents']
+  print_sources = []
+  for source in sources:
+    if source.metadata['source'] not in print_sources:
+      print_sources.append(source.metadata['source'])
+  for source in print_sources:
+    source = source.replace('/home/wouter/Documents/LangChain/data/', '')
+    source = source.replace('/home/wouter/Documents/LangChain/new/','')
+    source = source.replace('/home/wouter/Documents/LangChain/old/','')
+    print(source)
 
+  print("\n")
   chat_history.append((query, result['answer']))
   query = None
