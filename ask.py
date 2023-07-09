@@ -1,39 +1,33 @@
-from annoy import AnnoyIndex
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains import ConversationalRetrievalChain, RetrievalQA
+from dotenv import load_dotenv
+from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
+from langchain.chat_models import ChatOpenAI
+import os
+import sys
+import constants
+import openai
 
 # Set OpenAI API Key
 load_dotenv()
 os.environ["OPENAI_API_KEY"] = constants.APIKEY
 openai.api_key = constants.APIKEY 
 
-# Load the Annoy index
-dimension = 512
-index = AnnoyIndex(dimension, metric='euclidean')
-index.load("./vectorstore/index.ann")
+# Load FAISS database
+embeddings = OpenAIEmbeddings()
+db = FAISS.load_local("./vectorstore/", embeddings)
 
 # Get query as argument
 query = None
 if len(sys.argv) > 1:
   query = sys.argv[1]
 
-# TODO: I MIGHT WANT TO FIRST SELECT THE MOST RELEVANT INFORMATION
-# I THINK THIS WILL LIMIT THE SCOPE OF ANY FURTHER CONVERSATION
-relevant_documents = index.similarity_search(query)
-retrieved_information = retrieve_information(relevant_documents)
-
-# Set up elements for chain
-llm_model = "gpt3-turbo"
-retriever = index
-chain = ConversationalRetrievalChain.from_llm(llm_model, retriever)
-
-# THE BELOW NEEDS TO BE REPLACED WITH SOMETHING LIKE THE ABOVE
-  
-# Setup chain to get responses from
+# Set up chain
 chain = ConversationalRetrievalChain.from_llm(
   llm=ChatOpenAI(model="gpt-3.5-turbo"),
-  retriever=index.vectorstore.as_retriever(),
-  max_tokens_limit=4000)
+  retriever=db.as_retriever(),
+)
 
 # Set up conversation
 chat_history = []
