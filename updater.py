@@ -16,7 +16,7 @@ os.environ["OPENAI_API_KEY"] = constants.APIKEY
 openai.api_key = constants.APIKEY 
 
 # Load documents
-folder_path = '/home/wouter/Documents/LangChain/data/new/'
+folder_path = '/home/wouter/Documents/LangChain/data/new'
 print("===Loading documents===")
 text_loader_kwargs={'autodetect_encoding': True}
 loader = DirectoryLoader(folder_path,
@@ -42,6 +42,9 @@ embeddings = OpenAIEmbeddings(
 )
 
 print("===Embedding text and creating database===")
-db = FAISS.from_documents(split_documents, embeddings)
-db.save_local("./vectorstore/", "index")
+new_db = FAISS.from_documents(split_documents, embeddings)
+print("===Merging new and old database===")
+old_db = FAISS.load_local("./vectorstore/", embeddings)
+merged_db = old_db.merge_from(new_db)
+merged_db.save_local("./vectorstore/", "index")
 
