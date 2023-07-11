@@ -45,6 +45,6 @@ print("===Embedding text and creating database===")
 new_db = FAISS.from_documents(split_documents, embeddings)
 print("===Merging new and old database===")
 old_db = FAISS.load_local("./vectorstore/", embeddings)
-merged_db = old_db.merge_from(new_db)
-merged_db.save_local("./vectorstore/", "index")
+old_db.merge_from(new_db)
+old_db.save_local("./vectorstore/", "index")
 

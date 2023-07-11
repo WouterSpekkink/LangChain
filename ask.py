@@ -48,8 +48,8 @@ while True:
       print_sources.append(source.metadata['source'])
   for source in print_sources:
     source = source.replace('/home/wouter/Documents/LangChain/data/', '')
-    source = source.replace('/home/wouter/Documents/LangChain/new/','')
-    source = source.replace('/home/wouter/Documents/LangChain/old/','')
+    source = source.replace('/home/wouter/Documents/LangChain/data/new/','')
+    source = source.replace('/home/wouter/Documents/LangChain/data/old/','')
     print(source)
 
   print("\n")
