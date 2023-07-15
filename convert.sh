@@ -4,6 +4,8 @@
 # and another dir to store newly added papers
 existing_dir="/home/wouter/Documents/LangChain/data/old"
 output_dir="/home/wouter/Documents/LangChain/data/new"
+temp_dir="/home/wouter/Documents/LangChain/data/temp"
+image_pdf_list="/home/wouter/Documents/LangChain/image_pdf_list.txt"
 
 counter=0
 
@@ -17,6 +19,15 @@ do
 	echo "Text file for $file already exists, skipping."
     else 
 	pdftotext -enc UTF-8 "$file" "$output_dir/$base_name.txt"
+
+	pdfimages "$file" "$temp_dir/$base_name"
+
+	if [ ! -s "$output_dir/$base_name.txt" ] && [ -e "$temp_dir/$base_name-"*.pbm ] 1>/dev/null 2>&1
+	then
+	    echo "$base_name" >> "$image_pdf_list"
+	    rm "$output_dir/$base_name.txt"
+	fi
+
 	counter=$((counter + 1))
 	echo "Processed $counter out of $total PDFs."
     fi
