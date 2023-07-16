@@ -2,10 +2,9 @@
 
 # One dir to keep papers that I have already processed
 # and another dir to store newly added papers
-existing_dir="/home/wouter/Documents/LangChain/data/old"
-output_dir="/home/wouter/Documents/LangChain/data/new"
-temp_dir="/home/wouter/Documents/LangChain/data/temp"
-image_pdf_list="/home/wouter/Documents/LangChain/image_pdf_list.txt"
+existing_dir="/home/wouter/Documents/LangChain/Literature/data/old"
+output_dir="/home/wouter/Documents/LangChain/Literature/data/new"
+temp_dir="/home/wouter/Documents/LangChain/Literature/data/temp"
 
 counter=0
 
@@ -24,7 +23,6 @@ do
 
 	if [ ! -s "$output_dir/$base_name.txt" ] && [ -e "$temp_dir/$base_name-"*.pbm ] 1>/dev/null 2>&1
 	then
-	    echo "$base_name" >> "$image_pdf_list"
 	    rm "$output_dir/$base_name.txt"
 	fi
 

@@ -29,9 +29,11 @@ if len(sys.argv) > 1:
   query = sys.argv[1]
 
 # Customize prompt
-prompt_template = """Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Please try to give detailed answers. Give appropriate citations of literature and include a bibliography for those citations.
+prompt_template = """Use the provided pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.
 
-{context}
+Always try to include appropriate citations of literature in your answer and always tell me if you are not able to do so. Always include a bibliography for citations that you use. 
+
+Context: {context}
 
 Question: {question}"""
 PROMPT = PromptTemplate(
@@ -45,7 +47,7 @@ prompt = PROMPT
 # Set up conversational chain
 chain = ConversationalRetrievalChain.from_llm(
   llm = ChatOpenAI(model="gpt-3.5-turbo"),
-  retriever=db.as_retriever(),
+  retriever=db.as_retriever(search_type="mmr"),
   chain_type="stuff",
   return_source_documents = True,
   combine_docs_chain_kwargs={'prompt': prompt},
@@ -68,9 +70,9 @@ while True:
     if source.metadata['source'] not in print_sources:
       print_sources.append(source.metadata['source'])
   for source in print_sources:
-    source = source.replace('/home/wouter/Documents/LangChain/data/', '')
-    source = source.replace('/home/wouter/Documents/LangChain/data/new/','')
-    source = source.replace('/home/wouter/Documents/LangChain/data/old/','')
+    source = source.replace('/home/wouter/Documents/Literature/LangChain/data/', '')
+    source = source.replace('/home/wouter/Documents/Literature/LangChain/data/new/','')
+    source = source.replace('/home/wouter/Documents/Literature/LangChain/data/old/','')
     print(source)
 
   print("\n")
