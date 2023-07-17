@@ -1,13 +1,10 @@
 from langchain.embeddings.openai import OpenAIEmbeddings
-from langchain.chains import ConversationalRetrievalChain, RetrievalQA
-from langchain.chains.question_answering import load_qa_chain
-from langchain.chains import LLMChain
+from langchain.chains import ConversationalRetrievalChain
 from dotenv import load_dotenv
 from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.chains.conversational_retrieval.prompts import CONDENSE_QUESTION_PROMPT
 from langchain.prompts import PromptTemplate
 import os
 import sys
