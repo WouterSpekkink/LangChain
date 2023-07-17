@@ -5,11 +5,22 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
 import os
 import sys
 import constants
 import openai
+from langchain.prompts import (
+    ChatPromptTemplate,
+    PromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
 
 # Set OpenAI API Key
 load_dotenv()
@@ -44,19 +55,21 @@ refine_prompt = PromptTemplate(
   template=refine_prompt_template,
 )
 
-initial_qa_template = (
-  "Use the provided piece of context below and not prior knowledge to answer the question at the end. "
-  "If you don't know the answer, just say that you don't know, don't try to make up an answer, but just say 'I don't know'. "
-  "Please try to give detailed answers and write your answers in academic style, unless explicitly told otherwise. "
-  "---------------------\n"
-  "{context_str}"
-  "\n---------------------\n"
-  "Answer the question: {question}\n"
-)
-initial_qa_prompt = PromptTemplate(
-  input_variables=["context_str", "question"],
-  template=initial_qa_template
-)
+system_prompt_template = ("You are a knowledgeable professor working in academia.\n"
+                          "Using the provided pieces of context, you answer the questions asked by the human.\n"
+                          "If you don't know the answer, just say that you don't know, don't try to make up an answer.\n"
+                          "Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.\n"
+                          "Use references to literature in your answer and include a bibliography for citations that you use.\n"
+                          "Context: {context_str}")
+
+system_prompt = PromptTemplate(template=system_prompt_template,
+                               input_variables=["context_str"])
+
+system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
+human_template = "{question}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+
 # Set up conversational chain
 chain = ConversationalRetrievalChain.from_llm(
   llm = ChatOpenAI(model="gpt-3.5-turbo"),
@@ -64,7 +77,7 @@ chain = ConversationalRetrievalChain.from_llm(
   chain_type="refine",
   return_source_documents = True,
   combine_docs_chain_kwargs={'refine_prompt': refine_prompt,
-                             'question_prompt': initial_qa_prompt,
+                             'question_prompt': chat_prompt,
                              'return_refine_steps' : False,}
 )
 

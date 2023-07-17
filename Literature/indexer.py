@@ -18,7 +18,7 @@ openai.api_key = constants.APIKEY
 
 # Load documents
 source_path = './data/new/'
-destination_path = './data/new/'
+destination_path = './data/old/'
 store_path = './vectorstore/'
 print("===Loading documents===")
 text_loader_kwargs={'autodetect_encoding': True}
