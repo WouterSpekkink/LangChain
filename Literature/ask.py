@@ -5,11 +5,22 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
 import os
 import sys
 import constants
 import openai
+from langchain.prompts import (
+    ChatPromptTemplate,
+    PromptTemplate,
+    SystemMessagePromptTemplate,
+    AIMessagePromptTemplate,
+    HumanMessagePromptTemplate,
+)
+from langchain.schema import (
+    AIMessage,
+    HumanMessage,
+    SystemMessage
+)
 
 # Set OpenAI API Key
 load_dotenv()
@@ -26,17 +37,20 @@ if len(sys.argv) > 1:
   query = sys.argv[1]
 
 # Customize prompt
-prompt_template = """Use the provided pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.
+system_prompt_template = ("You are a knowledgeable professor working in academia.\n"
+                          "Using the provided pieces of context, you answer the questions asked by the human.\n"
+                          "If you don't know the answer, just say that you don't know, don't try to make up an answer.\n"
+                          "Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.\n"
+                          "Use references to literature in your answer and include a bibliography for citations that you use.\n"
+                          "Context: {context}")
 
-Always try to include appropriate citations of literature in your answer and always tell me if you are not able to do so. Always include a bibliography for citations that you use. 
+system_prompt = PromptTemplate(template=system_prompt_template,
+                               input_variables=["context"])
 
-Context: {context}
-
-Question: {question}"""
-PROMPT = PromptTemplate(
-    template=prompt_template, input_variables=["context", "question"]
-)
-prompt = PROMPT
+system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
+human_template = "{question}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
 
 # Set up conversational chain
 chain = ConversationalRetrievalChain.from_llm(
@@ -44,7 +58,7 @@ chain = ConversationalRetrievalChain.from_llm(
   retriever=db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}),
   chain_type="stuff",
   return_source_documents = True,
-  combine_docs_chain_kwargs={'prompt': prompt},
+  combine_docs_chain_kwargs={'prompt': chat_prompt},
 )
 
 # Set up conversation
