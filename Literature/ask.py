@@ -5,6 +5,12 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.retrievers.document_compressors import LLMChainExtractor
+from langchain.document_transformers import EmbeddingsRedundantFilter
+from langchain.retrievers.document_compressors import DocumentCompressorPipeline
+from langchain.retrievers.document_compressors import EmbeddingsFilter
+from datetime import datetime
 import os
 import sys
 import constants
@@ -36,6 +42,9 @@ query = None
 if len(sys.argv) > 1:
   query = sys.argv[1]
 
+# Set llm
+llm = ChatOpenAI(model="gpt-3.5-turbo")
+  
 # Customize prompt
 system_prompt_template = ("You are a knowledgeable professor working in academia.\n"
                           "Using the provided pieces of context, you answer the questions asked by the human.\n"
@@ -51,15 +60,33 @@ system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
 human_template = "{question}"
 human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
 chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+relevant_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
+
+# Set retriever
+redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
+pipeline_compressor = DocumentCompressorPipeline(
+    transformers=[redundant_filter, relevant_filter]
+)
+
+compression_retriever = ContextualCompressionRetriever(base_compressor = pipeline_compressor, base_retriever = db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}))
 
 # Set up conversational chain
 chain = ConversationalRetrievalChain.from_llm(
-  llm = ChatOpenAI(model="gpt-3.5-turbo"),
-  retriever=db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}),
+  llm=llm,
+  retriever=compression_retriever,
   chain_type="stuff",
   return_source_documents = True,
   combine_docs_chain_kwargs={'prompt': chat_prompt},
 )
+
+# Set up source file
+now = datetime.now()
+timestamp = now.strftime("%Y%m%d_%H%M%S")
+filename = f"sources/sources_{timestamp}.txt"
+with open(filename, 'w') as file:
+  file.write(f"Sources for search done on {timestamp}\n\n")
 
 # Set up conversation
 chat_history = []
@@ -77,6 +104,16 @@ while True:
   for source in sources:
     if source.metadata['source'] not in print_sources:
       print_sources.append(source.metadata['source'])
+      with open(filename, 'a') as file:
+        file.write("Query:\n")
+        file.write(query)
+        file.write("\n\n")
+        file.write("Document: ")
+        file.write(source.metadata['source'])
+        file.write("\n\n")
+        file.write("Content:\n")
+        file.write(source.page_content)
+        file.write("\n\n")
   for source in print_sources:
     source = os.path.basename(source)
     print(source)
