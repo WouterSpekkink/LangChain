@@ -84,9 +84,9 @@ chain = ConversationalRetrievalChain.from_llm(
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
-filename = f"sources/sources_{timestamp}.txt"
+filename = f"answers/answers_{timestamp}.txt"
 with open(filename, 'w') as file:
-  file.write(f"Sources for search done on {timestamp}\n\n")
+  file.write(f"Answers and sources for search done on {timestamp}\n\n")
 
 # Set up conversation
 chat_history = []
@@ -107,6 +107,9 @@ while True:
       with open(filename, 'a') as file:
         file.write("Query:\n")
         file.write(query)
+        file.write("\n\n")
+        file.write("Answer:\n")
+        file.write(result['answer'])
         file.write("\n\n")
         file.write("Document: ")
         file.write(source.metadata['source'])
