@@ -11,6 +11,7 @@ from langchain.document_transformers import EmbeddingsRedundantFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from datetime import datetime
+import textwrap
 import os
 import sys
 import constants
@@ -27,6 +28,11 @@ from langchain.schema import (
     HumanMessage,
     SystemMessage
 )
+
+# Cleanup function for source strings
+def string_cleanup(string):
+  """A function to clean up strings in the sources from unwanted symbols"""
+  return string.replace("{","").replace("}","").replace("\\","").replace("/","")
 
 # Set OpenAI API Key
 load_dotenv()
@@ -96,15 +102,51 @@ while True:
   if query in ['quit', 'q', 'exit']:
     sys.exit()
   result = chain({"question": query, "chat_history": chat_history})
-  print("\nAnswer:\n")
-  print(result['answer'])
-  print("\nSources:\n")
+  answer =  result['answer']
+  answer_text = answer.split('\n')
+  print('\033[1m' + '\nAnswer:\n' + '\033[0m')
+  for paragraph in answer_text:
+    print(textwrap.fill(paragraph, width = os.get_terminal_size().columns))
+  print('\033[1m' + '\nSources:\n' + '\033[0m')
   sources = result['source_documents']
   print_sources = []
   for source in sources:
     if source.metadata['source'] not in print_sources:
       print_sources.append(source.metadata['source'])
       with open(filename, 'a') as file:
+        reference = "UNVALID REF"
+        if source.metadata.get('ENTRYTYPE') == 'article':
+          reference = (
+            string_cleanup(source.metadata.get('author', "")) + " (" +
+            string_cleanup(source.metadata.get('year', "")) + "). " +
+            string_cleanup(source.metadata.get('title', "")) + ". " +
+            string_cleanup(source.metadata.get('journal', "")) + ", " +
+            string_cleanup(source.metadata.get('volume', "")) + " (" +
+            string_cleanup(source.metadata.get('number', "")) + "): " + 
+            string_cleanup(source.metadata.get('pages', "")) + ".")
+        elif source.metadata.get('ENTRYTYPE') == 'book':
+          author = ""
+          if 'author' in source.metadata:
+            author = string_cleanup(source.metadata.get('author', "NA"))
+          elif 'editor' in source.metadata:
+            author = string_cleanup(source.metadata.get('editor', "NA"))
+          reference = (
+            author + " (" + 
+            string_cleanup(source.metadata.get('year', "")) + "). " +
+            string_cleanup(source.metadata.get('title', "")) + ". " +
+            string_cleanup(source.metadata.get('address', "")) + ": " +
+            string_cleanup(source.metadata.get('publisher', "")) + ".")
+        else:
+          author = ""
+          if 'author' in source.metadata:
+            author = string_cleanup(source.metadata.get('author', "NA"))
+          elif 'editor' in source.metadata:
+            author = string_cleanup(source.metadata.get('editor', "NA"))
+          reference = (
+            author + "(" + 
+            string_cleanup(source.metadata.get('year', "")) + "). " +
+            string_cleanup(source.metadata.get('title', "")) + ". ")
+        print(textwrap.fill(reference, initial_indent='• ', subsequent_indent='  ', width=os.get_terminal_size().columns))
         file.write("Query:\n")
         file.write(query)
         file.write("\n\n")
@@ -112,16 +154,14 @@ while True:
         file.write(result['answer'])
         file.write("\n\n")
         file.write("Document: ")
+        file.write(reference)
+        file.write("\n")
         file.write(source.metadata['source'])
         file.write("\n\n")
         file.write("Content:\n")
-        file.write(source.page_content)
+        file.write(source.page_content.replace("\n", " "))
         file.write("\n\n")
-  for source in print_sources:
-    source = os.path.basename(source)
-    print(source)
 
-  print("\n")
   chat_history.append((query, result['answer']))
   if (len(chat_history) > 3):
     chat_history.pop(0)
