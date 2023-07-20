@@ -10,7 +10,9 @@ from langchain.retrievers.document_compressors import LLMChainExtractor
 from langchain.document_transformers import EmbeddingsRedundantFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.retrievers.document_compressors import EmbeddingsFilter
+from langchain.memory import ConversationBufferWindowMemory
 from datetime import datetime
+import chainlit as cl
 import textwrap
 import os
 import sys
@@ -43,78 +45,72 @@ openai.api_key = constants.APIKEY
 embeddings = OpenAIEmbeddings()
 db = FAISS.load_local("./vectorstore/", embeddings)
 
-# Get query as argument
-query = None
-if len(sys.argv) > 1:
-  query = sys.argv[1]
-
-# Set llm
-llm = ChatOpenAI(model="gpt-3.5-turbo")
-  
-# Customize prompt
-system_prompt_template = ("You are a knowledgeable professor working in academia.\n"
-                          "Using the provided pieces of context, you answer the questions asked by the human.\n"
-                          "If you don't know the answer, just say that you don't know, don't try to make up an answer.\n"
-                          "Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.\n"
-                          "Use references to literature in your answer and include a bibliography for citations that you use.\n"
-                          "Context: {context}")
-
-system_prompt = PromptTemplate(template=system_prompt_template,
-                               input_variables=["context"])
-
-system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
-human_template = "{question}"
-human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
-redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
-relevant_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
-
-# Set retriever
-redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
-embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
-pipeline_compressor = DocumentCompressorPipeline(
-    transformers=[redundant_filter, relevant_filter]
-)
-
-compression_retriever = ContextualCompressionRetriever(base_compressor = pipeline_compressor, base_retriever = db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}))
-
-# Set up conversational chain
-chain = ConversationalRetrievalChain.from_llm(
-  llm=llm,
-  retriever=compression_retriever,
-  chain_type="stuff",
-  return_source_documents = True,
-  combine_docs_chain_kwargs={'prompt': chat_prompt},
-)
-
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
 filename = f"answers/answers_{timestamp}.txt"
 with open(filename, 'w') as file:
-  file.write(f"Answers and sources for search done on {timestamp}\n\n")
+  file.write(f"Answers and sources for session started on {timestamp}\n\n")
 
-# Set up conversation
-chat_history = []
-while True:
-  if not query:
-    query = input("Prompt: ")
-  if query in ['quit', 'q', 'exit']:
-    sys.exit()
-  result = chain({"question": query, "chat_history": chat_history})
-  answer =  result['answer']
-  answer_text = answer.split('\n')
-  print('\033[1m' + '\nAnswer:\n' + '\033[0m')
-  for paragraph in answer_text:
-    print(textwrap.fill(paragraph, width = os.get_terminal_size().columns))
-  print('\033[1m' + '\nSources:\n' + '\033[0m')
-  sources = result['source_documents']
+@cl.langchain_factory(use_async=False)
+def factory():
+  # Set llm
+  llm = ChatOpenAI(model="gpt-3.5-turbo")
+  
+  # Customize prompt
+  system_prompt_template = ("You are a knowledgeable professor working in academia.\n"
+                            "Using the provided pieces of context, you answer the questions asked by the human.\n"
+                            "If you don't know the answer, just say that you don't know, don't try to make up an answer.\n"
+                            "Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.\n"
+                            "Use references to literature in your answer and include a bibliography for citations that you use.\n"
+                            "Context: {context}")
+
+  system_prompt = PromptTemplate(template=system_prompt_template,
+                                 input_variables=["context"])
+
+  system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
+  human_template = "{question}"
+  human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+  chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+  relevant_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
+  
+  # Set retriever
+  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+  embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
+  pipeline_compressor = DocumentCompressorPipeline(
+    transformers=[redundant_filter, relevant_filter]
+  )
+
+  compression_retriever = ContextualCompressionRetriever(base_compressor = pipeline_compressor, base_retriever = db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}))
+
+  # Set memory
+  memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
+ 
+  # Set up conversational chain
+  chain = ConversationalRetrievalChain.from_llm(
+    llm=llm,
+    retriever=compression_retriever,
+    chain_type="stuff",
+    return_source_documents = True,
+    return_generated_question = True,
+    combine_docs_chain_kwargs={'prompt': chat_prompt},
+    memory=memory,
+  )
+  return chain
+
+@cl.langchain_postprocess
+async def process_response(res):
+  question = res["question"]
+  answer = res["answer"]
+  answer += "\n\n Sources:\n\n"
+  sources = res["source_documents"]
   print_sources = []
   for source in sources:
     if source.metadata['source'] not in print_sources:
       print_sources.append(source.metadata['source'])
       with open(filename, 'a') as file:
-        reference = "UNVALID REF"
+        reference = "INVALID REF"
         if source.metadata.get('ENTRYTYPE') == 'article':
           reference = (
             string_cleanup(source.metadata.get('author', "")) + " (" +
@@ -156,13 +152,14 @@ while True:
             string_cleanup(source.metadata.get('author', "")) + " (" +
             string_cleanup(source.metadata.get('year', "")) + "). " +
             string_cleanup(source.metadata.get('title', "")) + ".")
-        print(textwrap.fill(reference, initial_indent='• ', subsequent_indent='  ', width=os.get_terminal_size().columns))
-        print("\n")
+        answer += '- '
+        answer += reference
+        answer += '\n'
         file.write("Query:\n")
-        file.write(query)
+        file.write(question)
         file.write("\n\n")
         file.write("Answer:\n")
-        file.write(result['answer'])
+        file.write(res['answer'])
         file.write("\n\n")
         file.write("Document: ")
         file.write(reference)
@@ -173,7 +170,6 @@ while True:
         file.write(source.page_content.replace("\n", " "))
         file.write("\n\n")
 
-  chat_history.append((query, result['answer']))
-  if (len(chat_history) > 3):
-    chat_history.pop(0)
-  query = None
+  await cl.Message(content=answer).send()
+
+ 
