@@ -86,6 +86,6 @@ db.save_local(store_path, "index")
 print("===Recording ingested files===")
 with open(destination_file, 'w') as f:
     for document in documents:
-        f.write(document.metadata['source'])
+        f.write(os.path.basename(document.metadata['source']))
         f.write('\n')
             

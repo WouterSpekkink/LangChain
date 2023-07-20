@@ -1,4 +1,2 @@
 * To do
-- I would like to get rid of the physical text file somehow.
-  - This requires me to maybe write a file with a list of files already processed somehow.
 - Maybe set folder and file paths in the constants file.

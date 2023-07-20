@@ -21,21 +21,8 @@ do
 
 	pdfimages "$file" "$temp_dir/$base_name"
 	
-	file_exists=false
-        for image_file in "$temp_dir/$base_name-"*.pbm "$temp_dir/$base_name-"*.ppm; do
-            if [ -e "$image_file" ]; then
-                file_exists=true
-                break
-            fi
-        done
-        
-        if  [ "$file_exists" = true ]
-        then
-            rm "$output_dir/$base_name.txt"
-        fi
-	
     fi
     counter=$((counter + 1))
-    echo "Processed $counter out of $total PDFs."
-
+    echo -ne "Processed $counter out of $total PDFs.\r"
+    
 done

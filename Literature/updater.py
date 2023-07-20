@@ -32,6 +32,9 @@ loader = DirectoryLoader(source_path,
                          loader_kwargs=text_loader_kwargs)
 documents = loader.load()
 
+if len(documents) == 0:
+    print("No new documents found")
+    quit()
 # Add metadata based in bibliographic information
 print("===Adding metadata===")
 
@@ -87,7 +90,8 @@ old_db.merge_from(new_db)
 old_db.save_local(store_path, "index")
 
 # Record the files that we have added
+print("===Recording ingested files===")
 with open(destination_file, 'a') as f:
     for document in documents:
-        f.write(document.metadata['source'])
+        f.write(os.path.basename(document.metadata['source']))
         f.write('\n')
