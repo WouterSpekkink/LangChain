@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 import openai
 import constants
 import time
-import shutil
 
 # Set OpenAI API Key
 load_dotenv()
@@ -19,9 +18,9 @@ openai.api_key = constants.APIKEY
 
 # Set paths
 source_path = './data/new/'
-destination_path = './data/old/'
 store_path = './vectorstore/'
 bibtex_file_path = '/home/wouter/Tools/Zotero/bibtex/library.bib'
+destination_file = './data/ingested.txt'
 
 # Load documents
 print("===Loading documents===")
@@ -83,11 +82,10 @@ print("===Embedding text and creating database===")
 db = FAISS.from_documents(split_documents, embeddings)
 db.save_local(store_path, "index")
 
-# Move files
-for filename in os.listdir(source_path):
-    # construct full file path
-    source = os.path.join(source_path, filename)
-    destination = os.path.join(destination_path, filename)
-    
-    # move the file
-    shutil.move(source, destination)
+# Record what we have ingested
+print("===Recording ingested files===")
+with open(destination_file, 'w') as f:
+    for document in documents:
+        f.write(document.metadata['source'])
+        f.write('\n')
+            

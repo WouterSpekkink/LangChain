@@ -147,6 +147,7 @@ while True:
             string_cleanup(source.metadata.get('year', "")) + "). " +
             string_cleanup(source.metadata.get('title', "")) + ". ")
         print(textwrap.fill(reference, initial_indent='• ', subsequent_indent='  ', width=os.get_terminal_size().columns))
+        print("\n")
         file.write("Query:\n")
         file.write(query)
         file.write("\n\n")

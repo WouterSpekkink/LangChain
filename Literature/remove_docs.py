@@ -11,6 +11,7 @@ from typing import Optional
 import numpy as np
 
 # Define removal function
+# Source: https://github.com/hwchase17/langchain/issues/2699
 def remove(vectorstore: FAISS, docstore_ids: Optional[list[str]]):
     """
     Function to remove documents from the vectorstore.

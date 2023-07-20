@@ -5,7 +5,6 @@ from langchain.document_loaders import DirectoryLoader, TextLoader
 import bibtexparser
 import langchain
 import os
-import shutil
 import glob
 from dotenv import load_dotenv
 import openai
@@ -19,7 +18,7 @@ openai.api_key = constants.APIKEY
 
 # Set paths
 source_path = './data/new'
-destination_path = './data/old'
+destination_file = './data/ingested.txt'
 store_path = './vectorstore/'
 bibtex_file_path = '/home/wouter/Tools/Zotero/bibtex/library.bib'
 
@@ -87,11 +86,8 @@ old_db = FAISS.load_local(store_path, embeddings)
 old_db.merge_from(new_db)
 old_db.save_local(store_path, "index")
 
-# Move files
-for filename in os.listdir(source_path):
-    # construct full file path
-    source = os.path.join(source_path, filename)
-    destination = os.path.join(destination_path, filename)
-    
-    # move the file
-    shutil.move(source, destination)
+# Record the files that we have added
+with open(destination_file, 'a') as f:
+    for document in documents:
+        f.write(document.metadata['source'])
+        f.write('\n')
