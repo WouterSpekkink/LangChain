@@ -11,6 +11,7 @@ from langchain.document_transformers import EmbeddingsRedundantFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.retrievers.document_compressors import EmbeddingsFilter
 from langchain.memory import ConversationBufferWindowMemory
+from langchain.callbacks import OpenAICallbackHandler
 from datetime import datetime
 import chainlit as cl
 import textwrap
@@ -45,6 +46,9 @@ openai.api_key = constants.APIKEY
 embeddings = OpenAIEmbeddings()
 db = FAISS.load_local("./vectorstore/", embeddings)
 
+# Set up callback handler
+handler = OpenAICallbackHandler()
+
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
@@ -52,8 +56,8 @@ filename = f"answers/answers_{timestamp}.txt"
 with open(filename, 'w') as file:
   file.write(f"Answers and sources for session started on {timestamp}\n\n")
 
-@cl.langchain_factory(use_async=False)
-def factory():
+@cl.on_chat_start
+def main():
   # Set llm
   llm = ChatOpenAI(model="gpt-3.5-turbo")
   
@@ -72,35 +76,30 @@ def factory():
   human_template = "{question}"
   human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
   chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
-  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
-  relevant_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
   
-  # Set retriever
-  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
-  embeddings_filter = EmbeddingsFilter(embeddings=embeddings, similarity_threshold=0.76)
-  pipeline_compressor = DocumentCompressorPipeline(
-    transformers=[redundant_filter, relevant_filter]
-  )
-
-  compression_retriever = ContextualCompressionRetriever(base_compressor = pipeline_compressor, base_retriever = db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}))
-
   # Set memory
   memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
  
   # Set up conversational chain
   chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
-    retriever=compression_retriever,
+    retriever=db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}),
     chain_type="stuff",
     return_source_documents = True,
     return_generated_question = True,
     combine_docs_chain_kwargs={'prompt': chat_prompt},
     memory=memory,
   )
-  return chain
+  cl.user_session.set("chain", chain)
 
-@cl.langchain_postprocess
-async def process_response(res):
+@cl.on_message
+async def main(message: str):
+  chain = cl.user_session.get("chain")
+  cb = cl.AsyncLangchainCallbackHandler(
+        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"]
+    )
+  cb.answer_reached = True
+  res = await chain.acall(message, callbacks=[cb])
   question = res["question"]
   answer = res["answer"]
   answer += "\n\n Sources:\n\n"
