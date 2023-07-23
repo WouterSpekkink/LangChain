@@ -3,3 +3,5 @@ data/
 vectorstore/
 sources/
 answers/
+Literature/constants.py
+HuggingFace/constants.py
