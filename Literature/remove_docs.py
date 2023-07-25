@@ -82,7 +82,6 @@ docs = list(db.docstore._dict.items())
 doc_to_remove = ""
 ids_to_remove = []
 
-
 for doc in docs:
     if 'ID' in doc[1].metadata and doc[1].metadata['ID'] == to_remove:
         ids_to_remove.append(doc[0])
