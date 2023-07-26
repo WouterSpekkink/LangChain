@@ -83,7 +83,7 @@ def main():
   # Set up conversational chain
   chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
-    retriever=db.as_retriever(search_type="mmr", search_kwargs={"k" : 10}),
+    retriever=db.as_retriever(search_type="similarity", search_kwargs={"k" : 10}),
     chain_type="stuff",
     return_source_documents = True,
     return_generated_question = True,
@@ -106,69 +106,67 @@ async def main(message: str):
   sources = res["source_documents"]
   print_sources = []
   for source in sources:
-    if source.metadata['source'] not in print_sources:
-      print_sources.append(source.metadata['source'])
-      with open(filename, 'a') as file:
-        reference = "INVALID REF"
-        if source.metadata.get('ENTRYTYPE') == 'article':
-          reference = (
-            string_cleanup(source.metadata.get('author', "")) + " (" +
-            string_cleanup(source.metadata.get('year', "")) + "). " +
-            string_cleanup(source.metadata.get('title', "")) + ". " +
-            string_cleanup(source.metadata.get('journal', "")) + ", " +
-            string_cleanup(source.metadata.get('volume', "")) + " (" +
-            string_cleanup(source.metadata.get('number', "")) + "): " + 
-            string_cleanup(source.metadata.get('pages', "")) + ".")
-        elif source.metadata.get('ENTRYTYPE') == 'book':
-          author = ""
-          if 'author' in source.metadata:
-            author = string_cleanup(source.metadata.get('author', "NA"))
-          elif 'editor' in source.metadata:
-            author = string_cleanup(source.metadata.get('editor', "NA"))
-          reference = (
-            author + " (" + 
-            string_cleanup(source.metadata.get('year', "")) + "). " +
-            string_cleanup(source.metadata.get('title', "")) + ". " +
-            string_cleanup(source.metadata.get('address', "")) + ": " +
-            string_cleanup(source.metadata.get('publisher', "")) + ".")
-        elif source.metadata.get('ENTRYTYPE') == 'incollection':
-          reference = (
-            string_cleanup(source.metadata.get('author', "")) + " (" +
-            string_cleanup(source.metadata.get('year', "")) + "). " +
-            string_cleanup(source.metadata.get('title', "")) + ". " +
-            "In: " +
-            string_cleanup(source.metadata.get('editor', "")) + 
-            " (Eds.), " +
-            string_cleanup(source.metadata.get('booktitle', "")) + ", " +
-            string_cleanup(source.metadata.get('pages', "")) + ".")
-        else:
-          author = ""
-          if 'author' in source.metadata:
-            author = string_cleanup(source.metadata.get('author', "NA"))
-          elif 'editor' in source.metadata:
-            author = string_cleanup(source.metadata.get('editor', "NA"))
-          reference = (
-            string_cleanup(source.metadata.get('author', "")) + " (" +
-            string_cleanup(source.metadata.get('year', "")) + "). " +
-            string_cleanup(source.metadata.get('title', "")) + ".")
-        answer += '- '
-        answer += reference
-        answer += '\n'
-        file.write("Query:\n")
-        file.write(question)
-        file.write("\n\n")
-        file.write("Answer:\n")
-        file.write(res['answer'])
-        file.write("\n\n")
-        file.write("Document: ")
-        file.write(reference)
-        file.write("\n")
-        file.write(source.metadata['source'])
-        file.write("\n\n")
-        file.write("Content:\n")
-        file.write(source.page_content.replace("\n", " "))
-        file.write("\n\n")
+     with open(filename, 'a') as file:
+       reference = "INVALID REF"
+       if source.metadata.get('ENTRYTYPE') == 'article':
+         reference = (
+           string_cleanup(source.metadata.get('author', "")) + " (" +
+           string_cleanup(source.metadata.get('year', "")) + "). " +
+           string_cleanup(source.metadata.get('title', "")) + ". " +
+           string_cleanup(source.metadata.get('journal', "")) + ", " +
+           string_cleanup(source.metadata.get('volume', "")) + " (" +
+           string_cleanup(source.metadata.get('number', "")) + "): " + 
+           string_cleanup(source.metadata.get('pages', "")) + ".")
+       elif source.metadata.get('ENTRYTYPE') == 'book':
+         author = ""
+         if 'author' in source.metadata:
+           author = string_cleanup(source.metadata.get('author', "NA"))
+         elif 'editor' in source.metadata:
+           author = string_cleanup(source.metadata.get('editor', "NA"))
+         reference = (
+           author + " (" + 
+           string_cleanup(source.metadata.get('year', "")) + "). " +
+           string_cleanup(source.metadata.get('title', "")) + ". " +
+           string_cleanup(source.metadata.get('address', "")) + ": " +
+           string_cleanup(source.metadata.get('publisher', "")) + ".")
+       elif source.metadata.get('ENTRYTYPE') == 'incollection':
+         reference = (
+           string_cleanup(source.metadata.get('author', "")) + " (" +
+           string_cleanup(source.metadata.get('year', "")) + "). " +
+           string_cleanup(source.metadata.get('title', "")) + ". " +
+           "In: " +
+           string_cleanup(source.metadata.get('editor', "")) + 
+           " (Eds.), " +
+           string_cleanup(source.metadata.get('booktitle', "")) + ", " +
+           string_cleanup(source.metadata.get('pages', "")) + ".")
+       else:
+         author = ""
+         if 'author' in source.metadata:
+           author = string_cleanup(source.metadata.get('author', "NA"))
+         elif 'editor' in source.metadata:
+           author = string_cleanup(source.metadata.get('editor', "NA"))
+         reference = (
+           string_cleanup(source.metadata.get('author', "")) + " (" +
+           string_cleanup(source.metadata.get('year', "")) + "). " +
+           string_cleanup(source.metadata.get('title', "")) + ".")
+       if source.metadata['source'] not in print_sources:
+         print_sources.append(source.metadata['source'])
+         answer += '- '
+         answer += reference
+         answer += '\n'
+       file.write("Query:\n")
+       file.write(question)
+       file.write("\n\n")
+       file.write("Answer:\n")
+       file.write(res['answer'])
+       file.write("\n\n")
+       file.write("Document: ")
+       file.write(reference)
+       file.write("\n")
+       file.write(source.metadata['source'])
+       file.write("\n\n")
+       file.write("Content:\n")
+       file.write(source.page_content.replace("\n", " "))
+       file.write("\n\n")
 
   await cl.Message(content=answer).send()
-
- 

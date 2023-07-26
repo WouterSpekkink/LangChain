@@ -4,4 +4,6 @@ vectorstore/
 sources/
 answers/
 Literature/constants.py
+Literature/.chainlit/
 HuggingFace/constants.py
+Literature/renamed.txt
