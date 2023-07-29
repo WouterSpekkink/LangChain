@@ -174,7 +174,7 @@ async def main(message: str):
        file.write("Document: ")
        file.write(reference)
        file.write("\n")
-       file.write(source.metadata['source'])
+       file.write(os.path.basename(source.metadata['source']))
        file.write("\n\n")
        file.write("Content:\n")
        file.write(source.page_content.replace("\n", " "))
