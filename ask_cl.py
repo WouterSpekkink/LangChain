@@ -7,6 +7,9 @@ from langchain.chat_models import ChatOpenAI
 from langchain.llms import OpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.callbacks import OpenAICallbackHandler
+from langchain.document_transformers import LongContextReorder, EmbeddingsRedundantFilter
+from langchain.retrievers.document_compressors import DocumentCompressorPipeline
+from langchain.retrievers import ContextualCompressionRetriever
 from datetime import datetime
 import chainlit as cl
 import textwrap
@@ -52,9 +55,9 @@ with open(filename, 'w') as file:
   file.write(f"Answers and sources for session started on {timestamp}\n\n")
 
 @cl.on_chat_start
-async def main():
+def main():
   # Set llm
-  llm = ChatOpenAI(model="gpt-3.5-turbo")
+  llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
   
   # Customize prompt
   system_prompt_template = (
@@ -72,10 +75,10 @@ async def main():
   If you cannot provide appropriate references, tell me by the end of your answer.
  
   Format your answer as follows:
-  [One or multiple sentences that constitutes part of your answer (APA-style reference)]
-  [The rest of your answer]
-  [Bibliography:]
-  [Bulleted bibliographical entries in APA-style]
+  One or multiple sentences that constitutes part of your answer (APA-style reference)
+  The rest of your answer
+  Bibliography:
+  Bulleted bibliographical entries in APA-style
   ''')
   
   system_prompt = PromptTemplate(template=system_prompt_template,
@@ -90,7 +93,12 @@ async def main():
   memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
 
   # Set up retriever
-  retriever = db.as_retriever(search_type="mmr", search_kwargs={"k" : 10})
+  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+  reordering = LongContextReorder()
+  pipeline = DocumentCompressorPipeline(transformers=[redundant_filter, reordering])
+  pipeline = DocumentCompressorPipeline(transformers=[reordering])
+  retriever= ContextualCompressionRetriever(
+    base_compressor=pipeline, base_retriever=db.as_retriever(search_type="similarity_score_threshold", search_kwargs={"k" : 20, "score_threshold": .75}))
   
   # Set up conversational chain
   chain = ConversationalRetrievalChain.from_llm(
@@ -107,10 +115,10 @@ async def main():
 @cl.on_message
 async def main(message: str):
   chain = cl.user_session.get("chain")
-  cb = cl.AsyncLangchainCallbackHandler(
+  cb = cl.LangchainCallbackHandler(
        stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"])
   cb.answer_reached = True
-  res = await chain.acall(message, callbacks=[cb])
+  res = await cl.make_async(chain)(message, callbacks=[cb])
   question = res["question"]
   answer = res["answer"]
   answer += "\n\n Sources:\n\n"
