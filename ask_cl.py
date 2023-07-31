@@ -187,7 +187,7 @@ async def main(message: str):
        file.write(os.path.basename(source.metadata['source']))
        file.write("\n")
        file.write("** Content:\n")
-       file.write(source.page_content.replace("\n", " "))
+       file.write(source.page_content)
        file.write("\n\n")
        counter += 1
 
