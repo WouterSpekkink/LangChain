@@ -50,9 +50,9 @@ handler = OpenAICallbackHandler()
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
-filename = f"answers/answers_{timestamp}.txt"
+filename = f"answers/answers_{timestamp}.org"
 with open(filename, 'w') as file:
-  file.write(f"Answers and sources for session started on {timestamp}\n\n")
+  file.write(f"#+TITLE: Answers and sources for session started on {timestamp}\n\n")
 
 @cl.on_chat_start
 def main():
@@ -124,8 +124,14 @@ async def main(message: str):
   answer += "\n\n Sources:\n\n"
   sources = res["source_documents"]
   print_sources = []
-  for source in sources:
-     with open(filename, 'a') as file:
+  with open(filename, 'a') as file:
+    file.write("* Query:\n")
+    file.write(question)
+    file.write("\n")
+    file.write("* Answer:\n")
+    file.write(res['answer'])
+    file.write("\n")
+    for source in sources:
        reference = "INVALID REF"
        if source.metadata.get('ENTRYTYPE') == 'article':
          reference = (
@@ -173,18 +179,12 @@ async def main(message: str):
          answer += '- '
          answer += reference
          answer += '\n'
-       file.write("Query:\n")
-       file.write(question)
-       file.write("\n\n")
-       file.write("Answer:\n")
-       file.write(res['answer'])
-       file.write("\n\n")
-       file.write("Document: ")
+       file.write("** Document:\n")
        file.write(reference)
        file.write("\n")
        file.write(os.path.basename(source.metadata['source']))
-       file.write("\n\n")
-       file.write("Content:\n")
+       file.write("\n")
+       file.write("** Content:\n")
        file.write(source.page_content.replace("\n", " "))
        file.write("\n\n")
 
