@@ -52,6 +52,7 @@ now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
 filename = f"answers/answers_{timestamp}.org"
 with open(filename, 'w') as file:
+  file.write("#+OPTIONS: toc:nil author:nil\n")
   file.write(f"#+TITLE: Answers and sources for session started on {timestamp}\n\n")
 
 @cl.on_chat_start
@@ -131,6 +132,7 @@ async def main(message: str):
     file.write("* Answer:\n")
     file.write(res['answer'])
     file.write("\n")
+    counter = 1
     for source in sources:
        reference = "INVALID REF"
        if source.metadata.get('ENTRYTYPE') == 'article':
@@ -179,13 +181,14 @@ async def main(message: str):
          answer += '- '
          answer += reference
          answer += '\n'
-       file.write("** Document:\n")
+       file.write(f"** Document_{counter}:\n- ")
        file.write(reference)
-       file.write("\n")
+       file.write("\n- ")
        file.write(os.path.basename(source.metadata['source']))
        file.write("\n")
        file.write("** Content:\n")
        file.write(source.page_content.replace("\n", " "))
        file.write("\n\n")
+       counter += 1
 
   await cl.Message(content=answer).send()
