@@ -1,7 +1,8 @@
 #!/bin/bash
 
-# One dir to keep papers that I have already processed
-# and another dir to store newly added papers
+# One file to keep the papers that I have already ingested
+# One dir to store newly added papers
+# A temporary dir for image-based pdfs.
 existing_file="/home/wouter/Documents/LangChain_Projects/Literature/data/ingested.txt"
 output_dir="/home/wouter/Documents/LangChain_Projects/Literature/data/new"
 temp_dir="/home/wouter/Documents/LangChain_Projects/Literature/data/temp"

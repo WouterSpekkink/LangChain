@@ -2,13 +2,12 @@ from langchain.vectorstores import FAISS
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.document_loaders import DirectoryLoader, TextLoader
+import bibtexparser
 import langchain
 import os
-import glob
 from dotenv import load_dotenv
 import openai
 import constants
-import time
 
 # Set OpenAI API Key
 load_dotenv()
@@ -28,7 +27,7 @@ loader = DirectoryLoader(source_path,
                          show_progress=True,
                          use_multithreading=True,
                          loader_cls=TextLoader,
-                         loader_kwargs=text_loader_kwargs)
+                         loader_kwargs={'autodetect_encoding': True})
 documents = loader.load()
 
 # Add metadata based in bibliographic information
