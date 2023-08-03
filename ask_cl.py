@@ -115,8 +115,7 @@ def main():
 @cl.on_message
 async def main(message: str):
   chain = cl.user_session.get("chain")
-  cb = cl.LangchainCallbackHandler(
-       stream_final_answer=True, answer_prefix_tokens=["FINAL", "ANSWER"])
+  cb = cl.LangchainCallbackHandler()
   cb.answer_reached = True
   res = await cl.make_async(chain)(message, callbacks=[cb])
   question = res["question"]
