@@ -59,7 +59,8 @@ with open(filename, 'w') as file:
 def main():
   # Set llm
   llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
-  
+  #llm=ChatOpenAI(model="gpt-4")
+ 
   # Customize prompt
   system_prompt_template = (
   '''
@@ -184,7 +185,7 @@ async def main(message: str):
        file.write("\n- ")
        file.write(os.path.basename(source.metadata['source']))
        file.write("\n")
-       file.write("** Content:\n")
+       file.write("*** Content:\n")
        file.write(source.page_content)
        file.write("\n\n")
        counter += 1

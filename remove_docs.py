@@ -83,11 +83,11 @@ doc_to_remove = ""
 ids_to_remove = []
 
 for doc in docs:
-    if 'ID' in doc[1].metadata and doc[1].metadata['ID'] == to_remove:
+    if 'ID' in doc[1].metadata and doc[1].metadata['ID'] == doc_to_remove:
         ids_to_remove.append(doc[0])
 
 remove(db, ids_to_remove)
 
-db.save_local('/.vectorstore/")
+db.save_local('./vectorstore/', "index")
 
 
