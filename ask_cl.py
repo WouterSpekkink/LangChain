@@ -51,6 +51,43 @@ handler = OpenAICallbackHandler()
 # Set memory
 memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
 
+# Customize prompt
+system_prompt_template = (
+  '''
+  You are a knowledgeable professor working in academia.
+  Using the provided pieces of context, you answer the questions asked by the user.
+  If you don't know the answer, just say that you don't know, don't try to make up an answer.
+
+  """
+  Context: {context}
+  """
+
+  Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.
+  Use references to literature in your answer and include a bibliography for citations that you use.
+  If you cannot provide appropriate references, tell me by the end of your answer.
+ 
+  Format your answer as follows:
+  One or multiple sentences that constitutes part of your answer (APA-style reference)
+  The rest of your answer
+  Bibliography:
+  Bulleted bibliographical entries in APA-style
+  ''')
+  
+system_prompt = PromptTemplate(template=system_prompt_template,
+                               input_variables=["context"])
+
+system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
+human_template = "{question}"
+human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
+chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
+
+# Set up retriever
+redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
+reordering = LongContextReorder()
+pipeline = DocumentCompressorPipeline(transformers=[redundant_filter, reordering])
+retriever= ContextualCompressionRetriever(
+  base_compressor=pipeline, base_retriever=db.as_retriever(search_type="similarity_score_threshold", search_kwargs={"k" : 20, "score_threshold": .75}))
+ 
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
@@ -93,43 +130,6 @@ async def setup_chain(settings):
     model=settings["Model"],
   )
  
-  # Customize prompt
-  system_prompt_template = (
-  '''
-  You are a knowledgeable professor working in academia.
-  Using the provided pieces of context, you answer the questions asked by the user.
-  If you don't know the answer, just say that you don't know, don't try to make up an answer.
-
-  """
-  Context: {context}
-  """
-
-  Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.
-  Use references to literature in your answer and include a bibliography for citations that you use.
-  If you cannot provide appropriate references, tell me by the end of your answer.
- 
-  Format your answer as follows:
-  One or multiple sentences that constitutes part of your answer (APA-style reference)
-  The rest of your answer
-  Bibliography:
-  Bulleted bibliographical entries in APA-style
-  ''')
-  
-  system_prompt = PromptTemplate(template=system_prompt_template,
-                                 input_variables=["context"])
-
-  system_message_prompt = SystemMessagePromptTemplate(prompt = system_prompt)
-  human_template = "{question}"
-  human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
-  chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
-
-  # Set up retriever
-  redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
-  reordering = LongContextReorder()
-  pipeline = DocumentCompressorPipeline(transformers=[redundant_filter, reordering])
-  retriever= ContextualCompressionRetriever(
-    base_compressor=pipeline, base_retriever=db.as_retriever(search_type="similarity_score_threshold", search_kwargs={"k" : 20, "score_threshold": .75}))
-  
   # Set up conversational chain
   chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
