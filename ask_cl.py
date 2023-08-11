@@ -48,6 +48,9 @@ db = FAISS.load_local("./vectorstore/", embeddings)
 # Set up callback handler
 handler = OpenAICallbackHandler()
 
+# Set memory
+memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
+
 # Set up source file
 now = datetime.now()
 timestamp = now.strftime("%Y%m%d_%H%M%S")
@@ -119,9 +122,6 @@ async def setup_chain(settings):
   human_template = "{question}"
   human_message_prompt = HumanMessagePromptTemplate.from_template(human_template)
   chat_prompt = ChatPromptTemplate.from_messages([system_message_prompt, human_message_prompt])
-
-  # Set memory
-  memory = ConversationBufferWindowMemory(memory_key="chat_history", input_key='question', output_key='answer', return_messages=True, k = 3)
 
   # Set up retriever
   redundant_filter = EmbeddingsRedundantFilter(embeddings=embeddings)
