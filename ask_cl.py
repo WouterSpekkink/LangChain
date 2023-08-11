@@ -12,6 +12,7 @@ from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.retrievers import ContextualCompressionRetriever
 from datetime import datetime
 import chainlit as cl
+from chainlit.input_widget import Select, Switch, Slider
 import textwrap
 import os
 import sys
@@ -55,11 +56,39 @@ with open(filename, 'w') as file:
   file.write("#+OPTIONS: toc:nil author:nil\n")
   file.write(f"#+TITLE: Answers and sources for session started on {timestamp}\n\n")
 
+# Prepare settings
 @cl.on_chat_start
-def main():
+async def start():
+  settings = await cl.ChatSettings(
+    [
+      Select(
+        id="Model",
+        label="OpenAI - Model",
+        values=["gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k"],
+        initial_index=0,
+      ),
+      Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
+      Slider(
+        id="Temperature",
+        label="OpenAI - Temperature",
+        initial=0,
+        min=0,
+        max=2,
+        step=0.1,
+      ),
+    ]
+  ).send()
+  await setup_chain(settings)
+
+# When settings are updated
+@cl.on_settings_update
+async def setup_chain(settings):
   # Set llm
-  #llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
-  llm=ChatOpenAI(model="gpt-4")
+  llm=ChatOpenAI(
+    temperature=settings["Temperature"],
+    streaming=settings["Streaming"],
+    model=settings["Model"],
+  )
  
   # Customize prompt
   system_prompt_template = (
@@ -110,6 +139,7 @@ def main():
     return_generated_question = True,
     combine_docs_chain_kwargs={'prompt': chat_prompt},
     memory=memory,
+    condense_question_llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo'),
   )
   cl.user_session.set("chain", chain)
 
