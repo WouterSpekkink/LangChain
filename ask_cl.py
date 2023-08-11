@@ -58,8 +58,8 @@ with open(filename, 'w') as file:
 @cl.on_chat_start
 def main():
   # Set llm
-  llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
-  #llm=ChatOpenAI(model="gpt-4")
+  #llm = ChatOpenAI(model="gpt-3.5-turbo-16k")
+  llm=ChatOpenAI(model="gpt-4")
  
   # Customize prompt
   system_prompt_template = (
@@ -133,61 +133,61 @@ async def main(message: str):
     file.write("\n")
     counter = 1
     for source in sources:
-       reference = "INVALID REF"
-       if source.metadata.get('ENTRYTYPE') == 'article':
-         reference = (
-           string_cleanup(source.metadata.get('author', "")) + " (" +
-           string_cleanup(source.metadata.get('year', "")) + "). " +
-           string_cleanup(source.metadata.get('title', "")) + ". " +
-           string_cleanup(source.metadata.get('journal', "")) + ", " +
-           string_cleanup(source.metadata.get('volume', "")) + " (" +
-           string_cleanup(source.metadata.get('number', "")) + "): " + 
-           string_cleanup(source.metadata.get('pages', "")) + ".")
-       elif source.metadata.get('ENTRYTYPE') == 'book':
-         author = ""
-         if 'author' in source.metadata:
-           author = string_cleanup(source.metadata.get('author', "NA"))
-         elif 'editor' in source.metadata:
-           author = string_cleanup(source.metadata.get('editor', "NA"))
-         reference = (
-           author + " (" + 
-           string_cleanup(source.metadata.get('year', "")) + "). " +
-           string_cleanup(source.metadata.get('title', "")) + ". " +
-           string_cleanup(source.metadata.get('address', "")) + ": " +
-           string_cleanup(source.metadata.get('publisher', "")) + ".")
-       elif source.metadata.get('ENTRYTYPE') == 'incollection':
-         reference = (
-           string_cleanup(source.metadata.get('author', "")) + " (" +
-           string_cleanup(source.metadata.get('year', "")) + "). " +
-           string_cleanup(source.metadata.get('title', "")) + ". " +
-           "In: " +
-           string_cleanup(source.metadata.get('editor', "")) + 
-           " (Eds.), " +
-           string_cleanup(source.metadata.get('booktitle', "")) + ", " +
-           string_cleanup(source.metadata.get('pages', "")) + ".")
-       else:
-         author = ""
-         if 'author' in source.metadata:
-           author = string_cleanup(source.metadata.get('author', "NA"))
-         elif 'editor' in source.metadata:
-           author = string_cleanup(source.metadata.get('editor', "NA"))
-         reference = (
-           string_cleanup(source.metadata.get('author', "")) + " (" +
-           string_cleanup(source.metadata.get('year', "")) + "). " +
-           string_cleanup(source.metadata.get('title', "")) + ".")
-       if source.metadata['source'] not in print_sources:
-         print_sources.append(source.metadata['source'])
-         answer += '- '
-         answer += reference
-         answer += '\n'
-       file.write(f"** Document_{counter}:\n- ")
-       file.write(reference)
-       file.write("\n- ")
-       file.write(os.path.basename(source.metadata['source']))
-       file.write("\n")
-       file.write("*** Content:\n")
-       file.write(source.page_content)
-       file.write("\n\n")
-       counter += 1
+      reference = "INVALID REF"
+      if source.metadata.get('ENTRYTYPE') == 'article':
+        reference = (
+          string_cleanup(source.metadata.get('author', "")) + " (" +
+          string_cleanup(source.metadata.get('year', "")) + "). " +
+          string_cleanup(source.metadata.get('title', "")) + ". " +
+          string_cleanup(source.metadata.get('journal', "")) + ", " +
+          string_cleanup(source.metadata.get('volume', "")) + " (" +
+          string_cleanup(source.metadata.get('number', "")) + "): " + 
+          string_cleanup(source.metadata.get('pages', "")) + ".")
+      elif source.metadata.get('ENTRYTYPE') == 'book':
+        author = ""
+        if 'author' in source.metadata:
+          author = string_cleanup(source.metadata.get('author', "NA"))
+        elif 'editor' in source.metadata:
+          author = string_cleanup(source.metadata.get('editor', "NA"))
+        reference = (
+          author + " (" + 
+          string_cleanup(source.metadata.get('year', "")) + "). " +
+          string_cleanup(source.metadata.get('title', "")) + ". " +
+          string_cleanup(source.metadata.get('address', "")) + ": " +
+          string_cleanup(source.metadata.get('publisher', "")) + ".")
+      elif source.metadata.get('ENTRYTYPE') == 'incollection':
+        reference = (
+          string_cleanup(source.metadata.get('author', "")) + " (" +
+          string_cleanup(source.metadata.get('year', "")) + "). " +
+          string_cleanup(source.metadata.get('title', "")) + ". " +
+          "In: " +
+          string_cleanup(source.metadata.get('editor', "")) + 
+          " (Eds.), " +
+          string_cleanup(source.metadata.get('booktitle', "")) + ", " +
+          string_cleanup(source.metadata.get('pages', "")) + ".")
+      else:
+        author = ""
+        if 'author' in source.metadata:
+          author = string_cleanup(source.metadata.get('author', "NA"))
+        elif 'editor' in source.metadata:
+          author = string_cleanup(source.metadata.get('editor', "NA"))
+        reference = (
+          string_cleanup(source.metadata.get('author', "")) + " (" +
+          string_cleanup(source.metadata.get('year', "")) + "). " +
+          string_cleanup(source.metadata.get('title', "")) + ".")
+      if source.metadata['source'] not in print_sources:
+        print_sources.append(source.metadata['source'])
+        answer += '- '
+        answer += reference
+        answer += '\n'
+      file.write(f"** Document_{counter}:\n- ")
+      file.write(reference)
+      file.write("\n- ")
+      file.write(os.path.basename(source.metadata['source']))
+      file.write("\n")
+      file.write("*** Content:\n")
+      file.write(source.page_content)
+      file.write("\n\n")
+      counter += 1
 
   await cl.Message(content=answer).send()
