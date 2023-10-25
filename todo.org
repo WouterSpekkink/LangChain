@@ -1,2 +1,0 @@
-* To do
-- Maybe set folder and file paths in the constants file?

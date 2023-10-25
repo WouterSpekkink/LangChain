@@ -1,4 +1,3 @@
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.chains import ConversationalRetrievalChain
 from dotenv import load_dotenv
 from langchain.vectorstores import FAISS
@@ -13,9 +12,7 @@ from langchain.retrievers import ContextualCompressionRetriever
 from datetime import datetime
 import chainlit as cl
 from chainlit.input_widget import Select, Switch, Slider
-import textwrap
 import os
-import sys
 import constants
 import openai
 from langchain.prompts import (
@@ -148,7 +145,7 @@ async def main(message: str):
   chain = cl.user_session.get("chain")
   cb = cl.LangchainCallbackHandler()
   cb.answer_reached = True
-  res = await cl.make_async(chain)(message, callbacks=[cb])
+  res = await cl.make_async(chain)(message.content, callbacks=[cb])
   question = res["question"]
   answer = res["answer"]
   answer += "\n\n Sources:\n\n"
