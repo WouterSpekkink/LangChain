@@ -85,6 +85,7 @@ ids_to_remove = []
 for doc in docs:
     if 'ID' in doc[1].metadata and doc[1].metadata['ID'] == doc_to_remove:
         ids_to_remove.append(doc[0])
+        print("removed " + doc[1].metadata['ID'])
 
 remove(db, ids_to_remove)
 
