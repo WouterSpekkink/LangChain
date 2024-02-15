@@ -1,12 +1,12 @@
 from langchain.chains import ConversationalRetrievalChain
 from dotenv import load_dotenv
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
-from langchain.chat_models import ChatOpenAI
-from langchain.llms import OpenAI
+from langchain_community.vectorstores import FAISS
+from langchain_openai import OpenAIEmbeddings
+from langchain_openai import ChatOpenAI
+from langchain_community.llms import OpenAI
 from langchain.memory import ConversationBufferWindowMemory
 from langchain.callbacks import OpenAICallbackHandler
-from langchain.document_transformers import LongContextReorder, EmbeddingsRedundantFilter
+from langchain_community.document_transformers import LongContextReorder, EmbeddingsRedundantFilter
 from langchain.retrievers.document_compressors import DocumentCompressorPipeline
 from langchain.retrievers import ContextualCompressionRetriever
 from datetime import datetime
