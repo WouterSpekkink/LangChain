@@ -87,6 +87,7 @@ if get_user_confirmation():
     # Embedding documents
     print("===Embedding text and creating database===")
     embeddings = OpenAIEmbeddings(
+        OpenAIEmbeddings(model="text-embedding-3-large"),
         show_progress_bar=True,
         request_timeout=60,
     )
