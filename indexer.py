@@ -1,4 +1,4 @@
-from langchain_community.vectorstores import FAISS
+from langchain_community.vectorstores import Chroma
 from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain_community.document_loaders import DirectoryLoader, TextLoader
@@ -43,6 +43,10 @@ if get_user_confirmation():
                              loader_kwargs={'autodetect_encoding': True})
     documents = loader.load()
 
+    if len(documents) == 0:
+        print("No new documents found")
+        quit()
+
     # Add metadata based in bibliographic information
     print("===Adding metadata===")
 
@@ -66,6 +70,12 @@ if get_user_confirmation():
                 # If a match is found, append the metadata to the list
                 metadata_store.append(entry)
 
+    # # Let's use filenames as unique ids.
+    # ids = [ ]
+    # for document in documents:
+    #     name = os.path.basename(document.metadata['source']).replace('.txt', '')
+    #     ids.append(name) # To make our ids
+    
     for document in documents:
         for entry in metadata_store:
             doc_name = os.path.basename(document.metadata['source']).replace('.txt', '')
@@ -91,9 +101,9 @@ if get_user_confirmation():
         show_progress_bar=True,
         request_timeout=60,
     )
-
-    db = FAISS.from_documents(split_documents, embeddings)
-    db.save_local(store_path, "index")
+    db = Chroma.from_documents(documents=split_documents,
+                               embedding=embeddings,
+                               persist_directory="./vectorstore",)
 
     # Record what we have ingested
     print("===Recording ingested files===")

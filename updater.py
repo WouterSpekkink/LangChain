@@ -1,7 +1,7 @@
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_community.vectorstores import Chroma
+from langchain.openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 import bibtexparser
 import langchain
 import os
@@ -58,6 +58,12 @@ for entry in bib_database.entries:
             # If a match is found, append the metadata to the list
             metadata_store.append(entry)
 
+# Let's use filenames as unique ids
+# ids = [ ]
+# for document in documents:
+#     name = os.path.basename(document.metadata['source']).replace('.txt', '')
+#     ids.append(name) # To make our ids
+            
 for document in documents:
     for entry in metadata_store:
         doc_name = os.path.basename(document.metadata['source']).replace('.txt', '')
@@ -77,17 +83,14 @@ text_splitter = RecursiveCharacterTextSplitter(
 split_documents = text_splitter.split_documents(documents)
 
 embeddings = OpenAIEmbeddings(
+    model="text-embedding-3-large",
     show_progress_bar=True,
     request_timeout=60,
 )
 
-print("===Embedding text and creating database===")
-new_db = FAISS.from_documents(split_documents, embeddings)
-
-print("===Merging new and old database===")
-old_db = FAISS.load_local(store_path, embeddings)
-old_db.merge_from(new_db)
-old_db.save_local(store_path, "index")
+print("===Embedding text and updating database===")
+old_db = Chroma(persist_directory="./vectorstore", embedding_function=embeddings)
+old_db.add_documents(split_documents)
 
 # Record the files that we have added
 print("===Recording ingested files===")
