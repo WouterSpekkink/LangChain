@@ -115,7 +115,7 @@ sq_retriever = SelfQueryRetriever.from_llm(
   vectorstore=db,
   document_contents=document_content_description,
   metadata_field_info=metadata_field_info,
-  search_kwargs={"k":20}
+  search_kwargs={"k":30}
 )
 
 retriever = ContextualCompressionRetriever(
@@ -168,7 +168,7 @@ async def setup_chain(settings):
   # Set up conversational chain
   chain = ConversationalRetrievalChain.from_llm(
     llm=llm,
-    retriever=sq_retriever,
+    retriever=retriever,
     chain_type="stuff",
     return_source_documents = True,
     return_generated_question = True,
