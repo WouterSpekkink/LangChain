@@ -58,7 +58,6 @@ if get_user_confirmation():
     text_file_names = os.listdir(source_path)
     metadata_store = []
 
-    # Go through each entry in the BibTeX file
     for entry in bib_database.entries:
         # Check if the 'file' key exists in the entry
         if 'file' in entry:
@@ -67,15 +66,34 @@ if get_user_confirmation():
 
             # Check if there is a text file with the same name
             if f'{pdf_file_name}.txt' in text_file_names:
-                # If a match is found, append the metadata to the list
-                metadata_store.append(entry)
+                # Make a copy of the entry to modify
+                entry_copy = entry.copy()
+            
+                # Check if the 'year' field exists and is not already an integer
+                if 'year' in entry_copy and not isinstance(entry_copy['year'], int):
+                    try:
+                        # Attempt to convert the year to an integer
+                        entry_copy['year'] = int(entry_copy['year'])
+                    except ValueError:
+                        # Handle cases where the year cannot be converted
+                        print(f"Warning: Could not convert year to int for {pdf_file_name}")
+            
+                        # Append the modified entry to the metadata store
+                metadata_store.append(entry_copy)
 
-    # # Let's use filenames as unique ids.
-    # ids = [ ]
-    # for document in documents:
-    #     name = os.path.basename(document.metadata['source']).replace('.txt', '')
-    #     ids.append(name) # To make our ids
-    
+
+    # # Go through each entry in the BibTeX file
+    # for entry in bib_database.entries:
+    #     # Check if the 'file' key exists in the entry
+    #     if 'file' in entry:
+    #         # Extract the file name from the 'file' field and remove the extension
+    #         pdf_file_name = os.path.basename(entry['file']).replace('.pdf', '')
+
+    #         # Check if there is a text file with the same name
+    #         if f'{pdf_file_name}.txt' in text_file_names:
+    #             # If a match is found, append the metadata to the list
+    #             metadata_store.append(entry)
+
     for document in documents:
         for entry in metadata_store:
             doc_name = os.path.basename(document.metadata['source']).replace('.txt', '')
