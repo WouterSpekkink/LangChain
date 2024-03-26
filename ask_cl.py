@@ -62,14 +62,13 @@ system_prompt_template = (
   """
 
   Please try to give detailed answers and write your answers as an academic text, unless explicitly told otherwise.
-  Use references to literature in your answer and include a bibliography for citations that you use.
-  If you cannot provide appropriate references, tell me by the end of your answer.
+  Also provide references where you can and if you are confident about the validity of your references.
+  The references should be APA-style.
+
+  Then format your answer as follows:
+  - Answer with in-text, APA-style citations
+  - Bibliography in APA-style
  
-  Format your answer as follows:
-  One or multiple sentences that constitutes part of your answer (APA-style reference)
-  The rest of your answer
-  Bibliography:
-  Bulleted bibliographical entries in APA-style
   ''')
   
 system_prompt = PromptTemplate(template=system_prompt_template,
@@ -100,8 +99,8 @@ metadata_field_info = [
     ),
     AttributeInfo(
         name="year",
-        description="The year that the document was published",
-        type="integer",
+        description="The year that the document was published. Keep in mind that these are stored as strings. Operators such as gte and lte won't work, but AND and OR operators will.",
+        type="string",
     ),
     AttributeInfo(
         name="journal",
@@ -238,7 +237,7 @@ async def main(message: str):
     answer += (os.path.basename(source.metadata['source']))
     answer += ("\n")
     answer += ("### Content:\n")
-    answer += (source.page_content)
+    answer += (source.page_content).replace("\r\n", " ").replace("\n", " ")
     answer += ("\n\n")
     counter += 1
 
