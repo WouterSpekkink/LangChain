@@ -81,19 +81,6 @@ if get_user_confirmation():
                         # Append the modified entry to the metadata store
                 metadata_store.append(entry_copy)
 
-
-    # # Go through each entry in the BibTeX file
-    # for entry in bib_database.entries:
-    #     # Check if the 'file' key exists in the entry
-    #     if 'file' in entry:
-    #         # Extract the file name from the 'file' field and remove the extension
-    #         pdf_file_name = os.path.basename(entry['file']).replace('.pdf', '')
-
-    #         # Check if there is a text file with the same name
-    #         if f'{pdf_file_name}.txt' in text_file_names:
-    #             # If a match is found, append the metadata to the list
-    #             metadata_store.append(entry)
-
     for document in documents:
         for entry in metadata_store:
             doc_name = os.path.basename(document.metadata['source']).replace('.txt', '')

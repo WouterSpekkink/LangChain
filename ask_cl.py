@@ -99,8 +99,8 @@ metadata_field_info = [
     ),
     AttributeInfo(
         name="year",
-        description="The year that the document was published. Keep in mind that these are stored as strings. Operators such as gte and lte won't work, but AND and OR operators will.",
-        type="string",
+        description="The year that the document was published. Make sure to pass these values as integers.",
+        type="int",
     ),
     AttributeInfo(
         name="journal",
@@ -193,7 +193,7 @@ async def main(message: str):
     if source.metadata.get('ENTRYTYPE') == 'article':
       reference = (
         string_cleanup(source.metadata.get('author', "")) + " (" +
-        string_cleanup(source.metadata.get('year', "")) + "). " +
+        str(source.metadata.get('year', "")) + "). " +
         string_cleanup(source.metadata.get('title', "")) + ". " +
         string_cleanup(source.metadata.get('journal', "")) + ", " +
         string_cleanup(source.metadata.get('volume', "")) + " (" +
@@ -207,14 +207,14 @@ async def main(message: str):
         author = string_cleanup(source.metadata.get('editor', "NA"))
       reference = (
         author + " (" + 
-        string_cleanup(source.metadata.get('year', "")) + "). " +
+        str(source.metadata.get('year', "")) + "). " +
         string_cleanup(source.metadata.get('title', "")) + ". " +
         string_cleanup(source.metadata.get('address', "")) + ": " +
         string_cleanup(source.metadata.get('publisher', "")) + ".")
     elif source.metadata.get('ENTRYTYPE') == 'incollection':
       reference = (
         string_cleanup(source.metadata.get('author', "")) + " (" +
-        string_cleanup(source.metadata.get('year', "")) + "). " +
+        str(source.metadata.get('year', "")) + "). " +
         string_cleanup(source.metadata.get('title', "")) + ". " +
         "In: " +
         string_cleanup(source.metadata.get('editor', "")) + 
@@ -229,7 +229,7 @@ async def main(message: str):
         author = string_cleanup(source.metadata.get('editor', "NA"))
       reference = (
         string_cleanup(source.metadata.get('author', "")) + " (" +
-        string_cleanup(source.metadata.get('year', "")) + "). " +
+        str(source.metadata.get('year', "")) + "). " +
         string_cleanup(source.metadata.get('title', "")) + ".")
     answer += (f"## Document_{counter}:\n- ")
     answer += (reference)
