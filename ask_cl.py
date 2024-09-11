@@ -110,7 +110,7 @@ metadata_field_info = [
 ]
 document_content_description = "A paragraph from an academic publication"
 sq_retriever = SelfQueryRetriever.from_llm(
-  llm=ChatOpenAI(model="gpt-4-0125-preview"),
+  llm=ChatOpenAI(model="gpt-4o"),
   vectorstore=db,
   document_contents=document_content_description,
   metadata_field_info=metadata_field_info,
