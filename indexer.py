@@ -1,7 +1,7 @@
-from langchain.vectorstores import FAISS
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_chroma import Chroma
+from langchain_openai import OpenAIEmbeddings
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.document_loaders import DirectoryLoader, TextLoader
+from langchain_community.document_loaders import DirectoryLoader, TextLoader
 import bibtexparser
 import langchain
 import os
@@ -43,6 +43,10 @@ if get_user_confirmation():
                              loader_kwargs={'autodetect_encoding': True})
     documents = loader.load()
 
+    if len(documents) == 0:
+        print("No new documents found")
+        quit()
+
     # Add metadata based in bibliographic information
     print("===Adding metadata===")
 
@@ -54,7 +58,6 @@ if get_user_confirmation():
     text_file_names = os.listdir(source_path)
     metadata_store = []
 
-    # Go through each entry in the BibTeX file
     for entry in bib_database.entries:
         # Check if the 'file' key exists in the entry
         if 'file' in entry:
@@ -63,8 +66,20 @@ if get_user_confirmation():
 
             # Check if there is a text file with the same name
             if f'{pdf_file_name}.txt' in text_file_names:
-                # If a match is found, append the metadata to the list
-                metadata_store.append(entry)
+                # Make a copy of the entry to modify
+                entry_copy = entry.copy()
+            
+                # Check if the 'year' field exists and is not already an integer
+                if 'year' in entry_copy and not isinstance(entry_copy['year'], int):
+                    try:
+                        # Attempt to convert the year to an integer
+                        entry_copy['year'] = int(entry_copy['year'])
+                    except ValueError:
+                        # Handle cases where the year cannot be converted
+                        print(f"Warning: Could not convert year to int for {pdf_file_name}")
+            
+                        # Append the modified entry to the metadata store
+                metadata_store.append(entry_copy)
 
     for document in documents:
         for entry in metadata_store:
@@ -87,12 +102,13 @@ if get_user_confirmation():
     # Embedding documents
     print("===Embedding text and creating database===")
     embeddings = OpenAIEmbeddings(
+        model="text-embedding-3-large",
         show_progress_bar=True,
         request_timeout=60,
     )
-
-    db = FAISS.from_documents(split_documents, embeddings)
-    db.save_local(store_path, "index")
+    db = Chroma.from_documents(documents=split_documents,
+                               embedding=embeddings,
+                               persist_directory="./vectorstore",)
 
     # Record what we have ingested
     print("===Recording ingested files===")
