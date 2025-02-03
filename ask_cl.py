@@ -138,8 +138,8 @@ async def start():
       Select(
         id="Model",
         label="OpenAI - Model",
-        values=["gpt-3.5-turbo-16k", "gpt-4-1106-preview", "gpt-4-0125-preview"],
-        initial_index=2,
+        values=["gpt-4", "gpt-4-turbo", "gpt-4o-mini", "gpt-4o"],
+        initial_index=3,
       ),
       Switch(id="Streaming", label="OpenAI - Stream Tokens", initial=True),
       Slider(
@@ -173,7 +173,7 @@ async def setup_chain(settings):
     return_generated_question = True,
     combine_docs_chain_kwargs={'prompt': chat_prompt},
     memory=memory,
-    condense_question_llm = ChatOpenAI(temperature=0, model='gpt-3.5-turbo'),
+    condense_question_llm = ChatOpenAI(temperature=0, model='gpt-4-turbo'),
   )
   cl.user_session.set("chain", chain)
 
